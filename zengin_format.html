@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>全銀フォーマット作成ツール（直接入力版）</title>
+  <style>
+    :root {
+      --pri: #2563eb;
+      --prih: #1d4ed8;
+      --dng: #dc2626;
+      --bg: #f8fafc;
+      --tx: #1e293b;
+      --bd: #cbd5e1
+    }
+
+    body {
+      font-family: system-ui, -apple-system, "Segoe UI", "Hiragino Sans", Meiryo, sans-serif;
+      background: var(--bg);
+      color: var(--tx);
+      margin: 0;
+      padding: 20px
+    }
+
+    .container {
+      max-width: 1500px;
+      margin: 0 auto;
+      background: #fff;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 6px -1px rgb(0 0 0/.1)
+    }
+
+    h1 {
+      font-size: 24px;
+      margin-top: 0;
+      border-bottom: 2px solid #e2e8f0;
+      padding-bottom: 15px
+    }
+
+    h2 {
+      font-size: 18px;
+      color: #334155;
+      margin: 0 0 10px
+    }
+
+    .box {
+      background: #f1f5f9;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      border: 1px solid #e2e8f0
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px
+    }
+
+    .fg {
+      display: flex;
+      flex-direction: column
+    }
+
+    .fg label {
+      font-size: 13px;
+      font-weight: bold;
+      margin-bottom: 5px;
+      color: #475569
+    }
+
+    input,
+    select {
+      padding: 8px 10px;
+      border: 1px solid var(--bd);
+      border-radius: 6px;
+      font-size: 14px;
+      background: #fff;
+      box-sizing: border-box
+    }
+
+    input.over {
+      border-color: var(--dng);
+      background: #fef2f2
+    }
+
+    .guide {
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      padding: 12px 15px;
+      border-radius: 6px;
+      font-size: 13px;
+      color: #1e40af;
+      margin-bottom: 15px
+    }
+
+    .guide ul {
+      margin: 5px 0 0 20px;
+      padding: 0
+    }
+
+    table {
+      border-collapse: collapse;
+      margin-bottom: 15px;
+      font-size: 13px;
+      background: #fff;
+      min-width: 1500px;
+      width: 100%
+    }
+
+    th,
+    td {
+      border: 1px solid #e2e8f0;
+      padding: 6px;
+      text-align: center
+    }
+
+    th {
+      background: #f1f5f9;
+      font-weight: 600;
+      white-space: nowrap
+    }
+
+    td input,
+    td select {
+      width: 100%;
+      padding: 6px;
+      font-size: 13px
+    }
+
+    .btn {
+      background: var(--pri);
+      color: #fff;
+      padding: 8px 16px;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      cursor: pointer;
+      font-weight: bold
+    }
+
+    .btn:hover {
+      background: var(--prih)
+    }
+
+    .btn-d {
+      background: var(--dng);
+      padding: 6px 12px;
+      font-size: 12px
+    }
+
+    .btn-s {
+      background: #475569
+    }
+
+    .ra {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+      margin-top: 15px;
+      align-items: center
+    }
+
+    .ag {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      background: #fff;
+      padding: 8px 12px;
+      border-radius: 6px;
+      border: 1px solid var(--bd)
+    }
+
+    .ag input {
+      width: 60px;
+      text-align: center;
+      padding: 6px
+    }
+
+    .actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 1px solid #e2e8f0;
+      gap: 10px;
+      flex-wrap: wrap
+    }
+
+    .sum {
+      font-size: 15px;
+      font-weight: bold
+    }
+
+    .sum span {
+      color: var(--pri)
+    }
+
+    #err {
+      color: var(--dng);
+      font-size: 13px;
+      margin-bottom: 10px
+    }
+
+    pre {
+      margin: 0;
+      padding: 10px;
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      overflow-x: auto;
+      font: 12px/1.5 ui-monospace, Menlo, Consolas, monospace
+    }
+
+    .req {
+      color: #dc2626;
+      font-weight: 700;
+      font-size: 11px;
+      margin-left: 3px
+    }
+
+    .opt {
+      color: #94a3b8;
+      font-weight: 500;
+      font-size: 11px;
+      margin-left: 3px
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h1>全銀フォーマット作成ツール（直接入力版）</h1>
+    <p>依頼人情報と振込先データを直接入力し、全銀フォーマット（固定長120バイト・Shift-JIS・CRLF）のテキストを生成します。<span class="req">必須</span>＝空だとエラー、<span
+        class="opt">任意</span>＝空でも出力可（0埋め・空白扱い）。</p>
+
+    <div class="box">
+      <h2>1. 依頼人（自社）情報・振込設定</h2>
+      <div class="grid" id="hd"></div>
+    </div>
+
+    <div class="box">
+      <h2>2. 振込先明細データ入力</h2>
+      <div class="guide"><strong>💡 入力のポイント</strong>
+        <ul>
+          <li><strong>数字欄</strong>：制限なし。数字以外はダウンロード時に自動で除去。</li>
+          <li><strong>カナ欄</strong>：ローマ字入力でカタカナに変換（<code>yamada</code>→ヤマダ、<code>-</code>→ー）。日本語入力は不可。</li>
+          <li><strong>Enter</strong>で次の行／<strong>Tab</strong>で次の項目。赤枠＝文字数オーバー。</li>
+        </ul>
+      </div>
+      <div style="overflow-x:auto">
+        <table>
+          <thead>
+            <tr id="th"></tr>
+          </thead>
+          <tbody id="tb"></tbody>
+        </table>
+      </div>
+      <div class="ra">
+        <div class="ag"><button class="btn btn-s" onclick="addRows()">＋ 行を追加</button><input type="number" id="ac"
+            value="1" min="1" max="50"> 行</div>
+        <div class="ag"><button class="btn btn-d" style="padding:8px 14px;font-size:14px" onclick="delRows()">ー
+            行を削除</button><input type="number" id="dc" value="1" min="1" max="50"> 行（下から）</div>
+      </div>
+    </div>
+
+    <div class="box">
+      <h2>3. プレビュー（半角カナ・120バイト）</h2>
+      <pre id="pv"></pre>
+    </div>
+    <div id="err"></div>
+    <div class="actions">
+      <div class="sum">合計件数: <span id="tc">0</span> 件 / 合計金額: <span id="ta">0</span> 円</div>
+      <div><input id="fn" value="ZENGIN.txt" style="width:160px"> <button class="btn" onclick="download()">全銀データをダウンロード
+          (.txt)</button></div>
+    </div>
+  </div>
+  <script>
+    const $ = id => document.getElementById(id);
+    /* ===== カナ変換 ===== */
+    const KP = 'アｱイｲウｳエｴオｵカｶキｷクｸケｹコｺサｻシｼスｽセｾソｿタﾀチﾁツﾂテﾃトﾄナﾅニﾆヌﾇネﾈノﾉハﾊヒﾋフﾌヘﾍホﾎマﾏミﾐムﾑメﾒモﾓヤﾔユﾕヨﾖラﾗリﾘルﾙレﾚロﾛワﾜヲｦンﾝァｧィｨゥｩェｪォｫッｯャｬュｭョｮーｰ、､。｡「｢」｣・･';
+    const Z2H = {}, H2Z = {}; for (let i = 0; i < KP.length; i += 2) { Z2H[KP[i]] = KP[i + 1]; H2Z[KP[i + 1]] = KP[i]; }
+    const DK = 'ガギグゲゴザジズゼゾダヂヅデドバビブベボ', PK = 'パピプペポ';
+    function toHan(s) {
+      let o = ''; for (let ch of s) {
+        if (Z2H[ch]) o += Z2H[ch];
+        else if (ch === 'ヴ') o += 'ｳﾞ';
+        else if (DK.includes(ch)) o += Z2H[String.fromCharCode(ch.charCodeAt(0) - 1)] + 'ﾞ';
+        else if (PK.includes(ch)) o += Z2H[String.fromCharCode(ch.charCodeAt(0) - 2)] + 'ﾟ';
+        else o += ch;
+      } return o;
+    }
+    function toZen(s) {
+      let o = ''; for (let ch of s) {
+        if ((ch === 'ﾞ' || ch === 'ﾟ') && o) {
+          const l = o.slice(-1), c = ch === 'ﾞ' ? (l === 'ウ' ? 'ヴ' : String.fromCharCode(l.charCodeAt(0) + 1)) : String.fromCharCode(l.charCodeAt(0) + 2);
+          if (ch === 'ﾞ' && (DK.includes(c) || c === 'ヴ') || ch === 'ﾟ' && PK.includes(c)) { o = o.slice(0, -1) + c; continue; }
+        }
+        o += H2Z[ch] || ch;
+      } return o;
+    }
+    /* ローマ字表 */
+    const RT = {};
+    {
+      const rows = { '': 'アイウエオ', k: 'カキクケコ', g: 'ガギグゲゴ', s: 'サシスセソ', z: 'ザジズゼゾ', t: 'タチツテト', d: 'ダヂヅデド', n: 'ナニヌネノ', h: 'ハヒフヘホ', b: 'バビブベボ', p: 'パピプペポ', m: 'マミムメモ', r: 'ラリルレロ' };
+      const V = 'aiueo';
+      for (const c in rows) for (let i = 0; i < 5; i++)RT[c + V[i]] = rows[c][i];
+      RT.ya = 'ヤ'; RT.yu = 'ユ'; RT.yo = 'ヨ'; RT.wa = 'ワ'; RT.wo = 'ヲ'; RT.wi = 'ウィ'; RT.we = 'ウェ'; RT.vu = 'ヴ';
+      Object.assign(RT, {
+        shi: 'シ', chi: 'チ', tsu: 'ツ', fu: 'フ', ji: 'ジ', fa: 'ファ', fi: 'フィ', fe: 'フェ', fo: 'フォ',
+        la: 'ァ', li: 'ィ', lu: 'ゥ', le: 'ェ', lo: 'ォ', xa: 'ァ', xi: 'ィ', xu: 'ゥ', xe: 'ェ', xo: 'ォ',
+        xya: 'ャ', xyu: 'ュ', xyo: 'ョ', lya: 'ャ', lyu: 'ュ', lyo: 'ョ', xtu: 'ッ', ltu: 'ッ', xtsu: 'ッ', ltsu: 'ッ', xwa: 'ヮ'
+      });
+      const y = ['ャ', 'ュ', 'ョ'], yv = 'aiueo';
+      ['k', 'g', 's', 'z', 't', 'd', 'n', 'h', 'b', 'p', 'm', 'r'].forEach(c => { const ik = rows[c][1];['a', 'u', 'o'].forEach((v, j) => { RT[c + 'y' + v] = ik + y[j]; }); RT[c + 'ye'] = ik + 'ェ'; });
+      [['sh', 'シ'], ['ch', 'チ'], ['j', 'ジ'], ['cy', 'チ'], ['jy', 'ジ']].forEach(([c, k]) => { ['a', 'u', 'o'].forEach((v, j) => { RT[c + v] = k + y[j]; }); RT[c + 'e'] = k + 'ェ'; });
+      RT.sha = 'シャ'; RT.shu = 'シュ'; RT.sho = 'ショ'; RT.she = 'シェ'; RT.che = 'チェ'; RT.je = 'ジェ';
+      RT.ca = 'カ'; RT.ci = 'シ'; RT.cu = 'ク'; RT.ce = 'セ'; RT.co = 'コ'; RT.qa = 'クァ';
+    }
+    const RK = Object.keys(RT), isV = c => 'aiueo'.includes(c);
+    function romaji(s, flush) {
+      let out = '', i = 0;
+      while (i < s.length) {
+        const c = s[i], n = s[i + 1];
+        if (c === 'n') {
+          if (n === undefined) { if (flush) { out += 'ン'; i++; continue; } return { out, rest: s.slice(i) }; }
+          if (n === 'n') { out += 'ン'; i += 2; continue; }
+          if (!isV(n) && n !== 'y') { out += 'ン'; i++; continue; }
+        }
+        if (n && c === n && !isV(c) && c !== 'n') { out += 'ッ'; i++; continue; }
+        if (c === 't' && s.slice(i + 1, i + 3) === 'ch') { out += 'ッ'; i++; continue; }
+        let hit = false;
+        for (let l = Math.min(4, s.length - i); l >= 1; l--) { const k = s.substr(i, l); if (RT[k]) { out += RT[k]; i += l; hit = true; break; } }
+        if (hit) continue;
+        const rem = s.slice(i);
+        if (!flush && rem.length < 4 && RK.some(k => k.startsWith(rem))) return { out, rest: rem };
+        i++;
+      }
+      return { out, rest: '' };
+    }
+    const KOK = /[\u30A1-\u30FA\u30FC\u30FB\u3001\u3002\u300C\u300D0-9 ()./\-]/;
+    function normKana(s, flush) {
+      s = toZen(String(s).replace(/[\u3041-\u3096]/g, c => String.fromCharCode(c.charCodeAt(0) + 0x60)));
+      s = s.replace(/[\uFF01-\uFF5E]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0)).replace(/\u3000/g, ' ').replace(/[\uFF0D\u2010]/g, '-');
+      /* ローマ字＋直後のハイフンは「長音（ー）」として確定変換する */
+      s = s.replace(/[A-Za-z]*-/g, m => { const r = romaji(m.slice(0, -1).toLowerCase(), true); return r.out + r.rest + 'ー'; });
+      s = s.replace(/[A-Za-z]+/g, (m, off, all) => { const r = romaji(m.toLowerCase(), flush || off + m.length < all.length); return r.out + r.rest; });
+      let o = ''; for (const ch of s) { if (KOK.test(ch) || /[a-z]/.test(ch)) o += ch; } return o;
+    }
+    /* ===== 入力ハンドラ ===== */
+    const over = el => { const m = +el.dataset.max; if (m) el.classList.toggle('over', toHan(normKana(el.value, true)).length > m); };
+    /* ひらがな・漢字が「挿入されようとした瞬間」にbeforeinputで拒否する（＝リアルタイム）。
+       これはvalueを書き換えるのではなく、ブラウザ自身に挿入をキャンセルさせる仕組みなので、
+       IMEの変換中の内部状態を壊さない（＝「あいうえお」を打とうとしても、確定前の変換候補の
+       時点で弾かれ、フィールドには反映されない）。
+       compositionend時の丸ごと巻き戻しは、beforeinputが効かない環境向けの保険として残す。 */
+    const JP_RE = /[\u3041-\u3096\u4E00-\u9FFF]/;
+    const stripJP = v => v.replace(/[\u3041-\u3096\u4E00-\u9FFF]/g, '');
+    function kanaBind(el) {
+      const fix = () => {
+        let v = stripJP(el.value);
+        v = normKana(v, false);
+        if (v !== el.value) { el.value = v; try { el.setSelectionRange(v.length, v.length); } catch (e) { } }
+        over(el); render();
+      };
+      el.addEventListener('beforeinput', e => {
+        if (e.data != null && JP_RE.test(e.data)) e.preventDefault();
+      });
+      el.addEventListener('compositionstart', () => { el.dataset.pre = el.value; });
+      el.addEventListener('input', e => { if (e.isComposing) return; fix(); });
+      el.addEventListener('compositionend', () => {
+        const pre = el.dataset.pre;
+        if (pre != null && el.value !== pre) el.value = pre;
+        fix();
+      });
+      el.addEventListener('blur', () => { el.value = normKana(el.value, true); over(el); render(); });
+    }
+    /* ===== 項目定義 ===== */
+    const KIND = [['1', '普通'], ['2', '当座'], ['4', '貯蓄'], ['9', 'その他']];
+    const HD = [['type', '種別コード', [['21', '21：総合振込'], ['11', '11：給与振込'], ['12', '12：賞与振込']]],
+    ['code', '委託者コード (10桁)', null, { n: 10, v: '' }], ['name', '委託者名（カナ・40文字）', null, { k: 40, v: '' }],
+    ['date', '振込指定日 (MMDD)', null, { n: 4, v: '' }], ['bank', '仕向銀行番号 (4桁)', null, { n: 4, v: '' }],
+    ['bname', '仕向銀行名（15文字）', null, { k: 15, v: '' }], ['br', '仕向支店番号 (3桁)', null, { n: 3, v: '' }],
+    ['brname', '仕向支店名（15文字）', null, { k: 15, v: '' }], ['kind', '預金種目', KIND.filter(x => x[0] !== '4')],
+    ['acc', '口座番号 (7桁)', null, { n: 7, v: '' }]];
+    const COLS = [['bank', '銀行番号(4)', { n: 4, w: 70 }], ['bname', '銀行名(カナ15)', { k: 15, w: 130 }], ['br', '支店番号(3)', { n: 3, w: 65 }],
+    ['brname', '支店名(カナ15)', { k: 15, w: 130 }], ['kind', '預金種目', KIND, 110], ['acc', '口座番号(7)', { n: 7, w: 90 }],
+    ['recv', '受取人名（カナ30）', { k: 30, w: 230 }], ['amt', '金額(円)', { a: 1, w: 110 }],
+    ['nw', '新規コード', [['0', '0 その他'], ['1', '1 第1回'], ['2', '2 変更'], ['7', '7 EDI']], 120],
+    ['c1', '顧客コード1(10)', { n: 10, w: 105 }], ['c2', '顧客コード2(10)', { n: 10, w: 105 }],
+    ['flag', '振込指定区分', [[' ', '空白'], ['7', '7 テレ'], ['8', '8 文書']], 110], ['id', '識別表示', [[' ', 'なし'], ['Y', 'Y']], 80]];
+    const opt = o => o.map(x => `<option value="${x[0]}">${x[1]}</option>`).join('');
+    $('hd').innerHTML = HD.map(([k, l, o, c]) => `<div class="fg"><label>${l}<span class="req">必須</span></label>${o ? `<select id="h_${k}">${opt(o)}</select>` : `<input id="h_${k}" ${c.n ? `type="text" inputmode="numeric" maxlength="${c.n}" data-n="1"` : `data-max="${c.k}" class="kana" lang="en" inputmode="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"`} value="${c.k ? toZen(c.v) : c.v}">`}</div>`).join('');
+    const OPT_COL = new Set(['nw', 'c1', 'c2', 'flag', 'id']);
+    $('th').innerHTML = '<th style="width:40px">行</th>' + COLS.map(c => `<th>${c[1]}<br>${OPT_COL.has(c[0]) ? '<span class="opt">任意</span>' : '<span class="req">必須</span>'}</th>`).join('') + '<th>操作</th>';
+    function addRow(d = {}) {
+      const tr = document.createElement('tr');
+      tr.innerHTML = '<td class="ri"></td>' + COLS.map(([k, , c, w]) => Array.isArray(c) ?
+        `<td><select data-k="${k}" style="min-width:${w}px">${opt(c)}</select></td>` :
+        `<td><input data-k="${k}" style="min-width:${c.w}px" ${c.n ? `type="text" inputmode="numeric" maxlength="${c.n}" data-n="1"` : c.k ? `data-max="${c.k}" class="kana" lang="en" inputmode="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"` : c.a ? 'type="text" inputmode="numeric" data-a="1"' : `maxlength="${c.c}"`}></td>`).join('')
+        + '<td><button class="btn btn-d" onclick="this.closest(\'tr\').remove();reidx();render()">削除</button></td>';
+      tr.querySelectorAll('[data-k]').forEach(e => { const v = d[e.dataset.k]; if (v != null) e.value = e.classList.contains('kana') ? toZen(v) : e.dataset.a ? (Number(String(v).replace(/\D/g, '')) || 0).toLocaleString() : v; });
+      $('tb').appendChild(tr); bindRow(tr); reidx();
+    }
+    /* 金額欄：カーソル位置を保ったまま、入力の都度3桁カンマを付け直す。
+       日本語IMEでは数字を打つと全角(１２３)に変換されることが多く、\Dだけで
+       判定すると全角数字が「数字ではない」として全部消えてしまうため、
+       全角→半角変換を先に行う。変換中(IME作動中)は値に触らず、確定時にfixする。 */
+    function amtBind(el) {
+      const fix = () => {
+        const digitsBefore = el.value.slice(0, el.selectionStart).replace(/[^0-9０-９]/g, '').length;
+        const raw = el.value.replace(/[０-９]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0)).replace(/\D/g, '');
+        const formatted = raw ? Number(raw).toLocaleString() : '';
+        if (formatted !== el.value) {
+          el.value = formatted;
+          let count = 0, pos = formatted.length;
+          if (digitsBefore === 0) pos = 0;
+          else for (let i = 0; i < formatted.length; i++) { if (/\d/.test(formatted[i])) { count++; if (count === digitsBefore) { pos = i + 1; break; } } }
+          try { el.setSelectionRange(pos, pos); } catch (e) { }
+        }
+        render();
+      };
+      el.addEventListener('input', e => { if (e.isComposing) return; fix(); });
+      el.addEventListener('compositionend', fix);
+    }
+    function bindRow(scope) {
+      scope.querySelectorAll('.kana').forEach(kanaBind);
+      scope.querySelectorAll('[data-a]').forEach(amtBind);
+      scope.querySelectorAll('[data-k]').forEach((el, ci) => el.addEventListener('keydown', e => {
+        if (e.isComposing) return;
+        if (e.key === 'Enter') { e.preventDefault(); if (el.classList.contains('kana')) el.value = normKana(el.value, true); mv(el, e.shiftKey ? -1 : 1); }
+        else if ((e.key === 'ArrowDown' || e.key === 'ArrowUp') && el.tagName === 'INPUT') { e.preventDefault(); mv(el, e.key === 'ArrowDown' ? 1 : -1); }
+      }));
+    }
+    function mv(el, d) {
+      const tr = el.closest('tr'), rows = [...$('tb').rows], ci = [...tr.querySelectorAll('[data-k]')].indexOf(el), t = rows[rows.indexOf(tr) + d];
+      if (t) { const x = t.querySelectorAll('[data-k]')[ci]; x.focus(); x.select && x.select(); }
+    }
+    const reidx = () => [...$('tb').rows].forEach((r, i) => r.querySelector('.ri').textContent = i + 1);
+    function addRows() { for (let i = 0; i < (+$('ac').value || 1); i++)addRow({ kind: '1' }); render(); }
+    function delRows() { let n = +$('dc').value || 1; while (n-- && $('tb').lastElementChild) $('tb').lastElementChild.remove(); reidx(); render(); }
+    document.addEventListener('input', () => render());
+    document.addEventListener('change', render);
+    /* ===== 生成 ===== */
+    const pad = (s, n) => s.length > n ? s.slice(0, n) : s.padEnd(n, ' '), num = (s, n) => String(s).replace(/\D/g, '').slice(-n).padStart(n, '0');
+    const han = (s, n) => pad(toHan(normKana(s, true)), n);
+    let lines = [], errs = [];
+    function build() {
+      errs = []; const g = k => $('h_' + k).value; lines = [];
+      const chk = (v, n, l) => { if (toHan(normKana(v, true)).length > n) errs.push(`${l}：${n}文字（半角換算）を超えています`); };
+      chk(g('name'), 40, '委託者名'); chk(g('bname'), 15, '仕向銀行名'); chk(g('brname'), 15, '仕向支店名');
+      if (!/^\d{4}$/.test(g('date'))) errs.push('振込指定日は MMDD の4桁の数字で入力してください');
+      lines.push('1' + g('type') + '0' + num(g('code'), 10) + han(g('name'), 40) + num(g('date'), 4) + num(g('bank'), 4) + han(g('bname'), 15) + num(g('br'), 3) + han(g('brname'), 15) + g('kind') + num(g('acc'), 7) + ' '.repeat(17));
+      let cnt = 0, sum = 0;
+      [...$('tb').rows].forEach((tr, i) => {
+        const r = {}; tr.querySelectorAll('[data-k]').forEach(e => r[e.dataset.k] = e.value);
+        const p = `${i + 1}行目 `, amt = parseInt(String(r.amt).replace(/\D/g, '') || '0', 10);
+        if (!/^\d{4}$/.test(r.bank)) errs.push(p + '銀行番号は4桁の数字で入力してください');
+        if (!/^\d{3}$/.test(r.br)) errs.push(p + '支店番号は3桁の数字で入力してください');
+        if (!/^\d{1,7}$/.test(r.acc)) errs.push(p + '口座番号を入力してください');
+        if (!normKana(r.recv, true).trim()) errs.push(p + '受取人名を入力してください');
+        if (amt <= 0) errs.push(p + '金額を入力してください');
+        chk(r.bname, 15, p + '銀行名'); chk(r.brname, 15, p + '支店名'); chk(r.recv, 30, p + '受取人名');
+        cnt++; sum += amt;
+        lines.push('2' + num(r.bank, 4) + han(r.bname, 15) + num(r.br, 3) + han(r.brname, 15) + '    ' + r.kind + num(r.acc, 7) + han(r.recv, 30) + num(amt, 10) + r.nw + num(r.c1, 10) + num(r.c2, 10) + r.flag + r.id + ' '.repeat(7));
+      });
+      lines.push('8' + num(cnt, 6) + num(sum, 12) + ' '.repeat(101)); lines.push('9' + ' '.repeat(119));
+      return { cnt, sum };
+    }
+    function render() { const { cnt, sum } = build(); $('pv').textContent = lines.join('\n'); $('tc').textContent = cnt; $('ta').textContent = sum.toLocaleString(); }
+    function sjis(t) { const b = []; for (const ch of t) { const c = ch.charCodeAt(0); b.push(c < 0x80 ? c : c >= 0xFF61 && c <= 0xFF9F ? c - 0xFF61 + 0xA1 : 0x20); } return new Uint8Array(b); }
+    function download() {
+      build(); if (!$('tb').rows.length) errs.push('振込先データがありません');
+      $('err').innerHTML = errs.length ? '⚠ ' + [...new Set(errs)].join('<br>⚠ ') : '';
+      if (errs.length) return;
+      const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([sjis(lines.join('\r\n') + '\r\n')], { type: 'text/plain' }));
+      a.download = $('fn').value || 'ZENGIN.txt'; a.click(); URL.revokeObjectURL(a.href);
+    }
+    document.querySelectorAll('#hd .kana').forEach(kanaBind);
+    addRow({ kind: '1' });
+    render();
+  </script>
+
+  <!-- ページ最下部に埋め込むガイドセクション -->
+  <div class="box" style="margin-top: 30px; background: #fffbeb; border-color: #fde68a;">
+    <h2 style="color: #92400e; font-size: 20px;">📌 全銀フォーマット作成・確認チェックリスト</h2>
+    <p style="font-size: 15px; color: #78350f; margin-bottom: 20px;">全銀データを正しく作成するために、以下の手順と入力情報の探し方を確認してください。</p>
+    
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 25px; font-size: 15px;">
+      <div style="background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #fef3c7;">
+        <strong style="color: #b45309; display: block; margin-bottom: 12px; font-size: 17px;">1. 依頼人（自社）情報の入力と探し方</strong>
+        <ul style="margin: 0; padding-left: 20px; color: #451a03; line-height: 1.8;">
+          <li><strong>種別コード</strong>：契約している振込の種類（総合振込・給与振込など）を選択。</li>
+          <li><strong>委託者コード</strong>：銀行と契約した際に指定された<strong>10桁のコード</strong>（通帳やネットバンキングの契約書類、過去の振込データを確認）。</li>
+          <li><strong>委託者名</strong>：自社の名義（カナ）。</li>
+          <li><strong>振込指定日</strong>：実際に振込を行いたい日（月日：MMDD）。</li>
+          <li><strong>仕向銀行・支店</strong>：利用する自社口座の<strong>銀行番号(4桁)・支店番号(3桁)・名称</strong>（自社の通帳の表紙やキャッシュカード、インターネットバンキングの口座情報で確認）。</li>
+          <li><strong>預金種目・口座番号</strong>：自社の口座種別（普通・当座）と<strong>7桁の口座番号</strong>（通帳等で確認）。</li>
+        </ul>
+      </div>
+      <div style="background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #fef3c7;">
+        <strong style="color: #b45309; display: block; margin-bottom: 12px; font-size: 17px;">2. 振込先明細データの入力と探し方</strong>
+        <ul style="margin: 0; padding-left: 20px; color: #451a03; line-height: 1.8;">
+          <li><strong>行の調整</strong>：振込件数に合わせて「＋ 行を追加」「ー 行を削除」を実行。</li>
+          <li><strong>振込先口座情報</strong>：相手方の<strong>銀行番号(4)・支店番号(3)・種別・口座番号(最大7)</strong>（請求書、契約書、または相手から提出された口座振替依頼書等を確認）。</li>
+          <li><strong>受取人名</strong>：相手方の口座名義のカナ（30文字以内）。※法人の場合は株式会社などを略さず正確に入力。</li>
+          <li><strong>金額</strong>：請求書や契約書に記載されている<strong>振込金額（円単位）</strong>。</li>
+          <li><strong>任意項目</strong>：新規コードや顧客コードなど、社内ルールや指定がある場合のみ入力（通常は空欄や初期値で可）。</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</body>
+
+</html>
